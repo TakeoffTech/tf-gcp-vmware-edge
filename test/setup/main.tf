@@ -16,9 +16,9 @@
 
 module "project" {
   source  = "terraform-google-modules/project-factory/google"
-  version = "~> 11.0"
+  version = "~> 13.0"
 
-  name              = "ci-sdwan"
+  name              = "prj-ci-sdwan"
   random_project_id = "true"
   org_id            = var.org_id
   folder_id         = var.folder_id
@@ -27,6 +27,7 @@ module "project" {
   activate_apis = [
     "cloudresourcemanager.googleapis.com",
     "storage-api.googleapis.com",
-    "serviceusage.googleapis.com"
+    "serviceusage.googleapis.com",
+    "compute.googleapis.com"
   ]
 }

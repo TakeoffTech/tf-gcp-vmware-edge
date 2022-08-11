@@ -18,5 +18,5 @@ module "sdwan" {
   source = "../.."
 
   project_id  = var.project_id
-  bucket_name = var.bucket_name
+  regions     = var.regions
 }

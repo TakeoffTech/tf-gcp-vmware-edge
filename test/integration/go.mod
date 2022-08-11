@@ -1,4 +1,4 @@
-module github.com/terraform-google-modules/sdwan/test/integration
+module github.com/takeofofftech/tf-gcp-vmware-edge/sdwan/test/integration
 
 go 1.16
 

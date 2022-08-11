@@ -18,6 +18,11 @@ variable "project_id" {
   description = "The project ID to deploy to"
 }
 
-variable "bucket_name" {
-  description = "The name of the bucket to create"
+variable "regions" {
+  description = "List of regions to deploy VMware edge appliances"
+  type        = list(string)
 }
+
+# variable "lan_vpc" {
+#   description = "Name of exsisiting VPC for the lan side of the appliance"
+# }

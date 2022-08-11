@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-output "bucket_name" {
-  description = "The name of the bucket."
-  value       = module.sdwan.bucket_name
-}
+# output "bucket_name" {
+#   description = "The name of the bucket."
+#   value       = module.sdwan.bucket_name
+# }

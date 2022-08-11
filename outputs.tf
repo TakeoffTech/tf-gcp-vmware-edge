@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-output "bucket_name" {
-  value = google_storage_bucket.main.name
-}
+# output "bucket_name" {
+#   value = google_storage_bucket.main.name
+# }

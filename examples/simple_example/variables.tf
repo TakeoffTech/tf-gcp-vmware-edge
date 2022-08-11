@@ -19,7 +19,7 @@ variable "project_id" {
   type        = string
 }
 
-variable "bucket_name" {
-  description = "The name of the bucket to create."
-  type        = string
+variable "regions" {
+  description = "List of regions to deploy VMware edge appliances"
+  type        = list(string)
 }
