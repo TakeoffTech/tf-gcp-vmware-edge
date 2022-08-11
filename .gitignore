@@ -1,6 +1,9 @@
 # OSX leaves these everywhere on SMB shares
 ._*
 
+#
+.vscode
+
 # OSX trash
 .DS_Store
 
