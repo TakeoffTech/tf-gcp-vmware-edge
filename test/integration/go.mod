@@ -1,4 +1,4 @@
-module github.com/takeofofftech/tf-gcp-vmware-edge/sdwan/test/integration
+module github.com/takeofftech/tf-gcp-vmware-edge/test/integration
 
 go 1.16
 
