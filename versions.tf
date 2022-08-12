@@ -16,12 +16,12 @@
 
 terraform {
   required_version = ">= 0.13"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 3.53, < 5.0"
-    }
-  }
+  # required_providers {
+  #   google = {
+  #     source  = "hashicorp/google"
+  #     version = "~> 3.53, < 5.0"
+  #   }
+  # }
 
   provider_meta "takeoff" {
     module_name = "blueprints/terraform/gcp-vmware-edge/v0.0.1"

@@ -24,7 +24,7 @@ module "mgmt-vpc" {
 
     subnets = [
         {
-            subnet_name           = "${var.regions[0]}-subnet"
+            subnet_name           = "${var.regions[0]}-mgmt-vpc-subnet"
             subnet_ip             = "192.168.10.0/24"
             subnet_region         = var.regions[0]
         }
@@ -65,7 +65,7 @@ module "inet-vpc" {
 
     subnets = [
         {
-            subnet_name           = "${var.regions[0]}-subnet"
+            subnet_name           = "${var.regions[0]}-inet-vpc-subnet"
             subnet_ip             = "192.168.20.0/24"
             subnet_region         = var.regions[0]
         }

@@ -18,3 +18,7 @@
 #   description = "The name of the bucket."
 #   value       = module.sdwan.bucket_name
 # }
+output "project_id" {
+  description = "The ID of the project in which to provision resources."
+  value       = var.project_id
+}

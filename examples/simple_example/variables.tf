@@ -22,4 +22,5 @@ variable "project_id" {
 variable "regions" {
   description = "List of regions to deploy VMware edge appliances"
   type        = list(string)
+  default     = [ "us-central1" ]
 }
