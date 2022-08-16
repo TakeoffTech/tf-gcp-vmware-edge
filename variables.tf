@@ -18,9 +18,10 @@ variable "project_id" {
   description = "The project ID to deploy to"
 }
 
-variable "regions" {
-  description = "List of regions to deploy VMware edge appliances"
-  type        = list(string)
+variable "network_regions" {
+  description = "List of regions and subnets to deploy VMware edge appliances"
+  type        = list(map(string))
+  default     = []
 }
 
 # variable "lan_vpc" {

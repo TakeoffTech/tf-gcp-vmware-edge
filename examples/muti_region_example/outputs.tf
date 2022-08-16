@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-module "sdwan" {
-  source = "../.."
+# output "bucket_name" {
+#   description = "The name of the bucket."
+#   value       = module.sdwan.bucket_name
+# }
+output "project_id" {
+  description = "The ID of the project in which to provision resources."
+  value       = var.project_id
+}
 
-  project_id  = var.project_id
-  regions     = var.regions
+output "network_regions" {
+  value = var.network_regions
 }

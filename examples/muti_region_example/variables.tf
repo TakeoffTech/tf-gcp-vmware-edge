@@ -14,11 +14,24 @@
  * limitations under the License.
  */
 
-# output "bucket_name" {
-#   description = "The name of the bucket."
-#   value       = module.sdwan.bucket_name
-# }
-output "project_id" {
+variable "project_id" {
   description = "The ID of the project in which to provision resources."
-  value       = var.project_id
+  type        = string
+}
+
+variable "network_regions" {
+  description = "List of regions and subnets to deploy VMware edge appliances"
+  type        = list(map(string))
+  default = [
+    {
+      name = "us-central1"   
+      inet_subnet = "192.168.20.0/24"
+      mgmt_subnet = "192.168.10.0/24"
+    },
+    {
+      name = "us-west2"
+      inet_subnet = "192.168.21.0/24"
+      mgmt_subnet = "192.168.11.0/24"
+    },
+  ]
 }

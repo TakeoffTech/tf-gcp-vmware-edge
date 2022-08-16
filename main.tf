@@ -14,6 +14,24 @@
  * limitations under the License.
  */
 
+locals {
+    mgmt_subnets = flatten([
+        for network_region in var.network_regions : {
+            subnet_name   = "${network_region.name}-mgmt-vpc-subnet"
+            subnet_ip     = network_region.mgmt_subnet
+            subnet_region = network_region.name
+        }
+    ])
+
+    inet_subnets = flatten([
+        for network_region in var.network_regions : {
+            subnet_name   = "${network_region.name}-inet-vpc-subnet"
+            subnet_ip     = network_region.inet_subnet
+            subnet_region = network_region.name
+        }
+    ])
+}
+
 module "mgmt-vpc" {
     source  = "terraform-google-modules/network/google"
     version = "~> 5.0"
@@ -22,19 +40,7 @@ module "mgmt-vpc" {
     network_name = "sdwan-mgmt-vpc"
     routing_mode = "GLOBAL"
 
-    subnets = [
-        {
-            subnet_name           = "${var.regions[0]}-mgmt-vpc-subnet"
-            subnet_ip             = "192.168.10.0/24"
-            subnet_region         = var.regions[0]
-        }
-    #    },
-    #     {
-    #         subnet_name           = "${var.regions[1]}-subnet"
-    #         subnet_ip             = "192.168.11.0/24"
-    #         subnet_region         = var.regions[1]
-    #     }
-    # ]
+    subnets = local.mgmt_subnets
 
     # routes = [
     #     {
@@ -52,7 +58,7 @@ module "mgmt-vpc" {
     #         next_hop_instance      = "app-proxy-instance"
     #         next_hop_instance_zone = "us-west1-a"
     #     },
-    ]
+    # ]
 }
 
 module "inet-vpc" {
@@ -63,19 +69,7 @@ module "inet-vpc" {
     network_name = "sdwan-inet-vpc"
     routing_mode = "GLOBAL"
 
-    subnets = [
-        {
-            subnet_name           = "${var.regions[0]}-inet-vpc-subnet"
-            subnet_ip             = "192.168.20.0/24"
-            subnet_region         = var.regions[0]
-        }
-    #    },
-    #     {
-    #         subnet_name           = "${var.regions[1]}-subnet"
-    #         subnet_ip             = "192.168.21.0/24"
-    #         subnet_region         = var.regions[1]
-    #     }
-    # ]
+    subnets = local.inet_subnets
 
     # routes = [
     #     {
@@ -93,5 +87,6 @@ module "inet-vpc" {
     #         next_hop_instance      = "app-proxy-instance"
     #         next_hop_instance_zone = "us-west1-a"
     #     },
-    ]
+    # ]
 }
+

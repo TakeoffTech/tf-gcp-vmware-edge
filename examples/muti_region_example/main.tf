@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-variable "project_id" {
-  description = "The ID of the project in which to provision resources."
-  type        = string
-}
+module "sdwan" {
+  source = "../.."
 
-variable "regions" {
-  description = "List of regions to deploy VMware edge appliances"
-  type        = list(string)
-  default     = [ "us-central1" ]
+  project_id      = var.project_id
+  network_regions = var.network_regions
 }
