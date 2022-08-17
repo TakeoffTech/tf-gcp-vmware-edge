@@ -17,3 +17,11 @@
 # output "bucket_name" {
 #   value = google_storage_bucket.main.name
 # }
+
+output "mgmt_subnets" {
+  value = module.mgmt_vpc.subnets
+}
+
+output "inet_subnets" {
+  value = module.mgmt_vpc.subnets
+}

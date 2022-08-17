@@ -17,7 +17,7 @@
 locals {
     mgmt_subnets = flatten([
         for network_region in var.network_regions : {
-            subnet_name   = "${network_region.name}-mgmt-vpc-subnet"
+            subnet_name   = "mgmt-vpc-subnet-${network_region.name}"
             subnet_ip     = network_region.mgmt_subnet
             subnet_region = network_region.name
         }
@@ -25,14 +25,14 @@ locals {
 
     inet_subnets = flatten([
         for network_region in var.network_regions : {
-            subnet_name   = "${network_region.name}-inet-vpc-subnet"
+            subnet_name   = "inet-vpc-subnet-${network_region.name}"
             subnet_ip     = network_region.inet_subnet
             subnet_region = network_region.name
         }
     ])
 }
 
-module "mgmt-vpc" {
+module "mgmt_vpc" {
     source  = "terraform-google-modules/network/google"
     version = "~> 5.0"
 
@@ -41,27 +41,9 @@ module "mgmt-vpc" {
     routing_mode = "GLOBAL"
 
     subnets = local.mgmt_subnets
-
-    # routes = [
-    #     {
-    #         name                   = "egress-internet"
-    #         description            = "route through IGW to access internet"
-    #         destination_range      = "0.0.0.0/0"
-    #         tags                   = "egress-inet"
-    #         next_hop_internet      = "true"
-    #     },
-    #     {
-    #         name                   = "app-proxy"
-    #         description            = "route through proxy to reach app"
-    #         destination_range      = "10.50.10.0/24"
-    #         tags                   = "app-proxy"
-    #         next_hop_instance      = "app-proxy-instance"
-    #         next_hop_instance_zone = "us-west1-a"
-    #     },
-    # ]
 }
 
-module "inet-vpc" {
+module "inet_vpc" {
     source  = "terraform-google-modules/network/google"
     version = "~> 5.0"
 
@@ -71,22 +53,45 @@ module "inet-vpc" {
 
     subnets = local.inet_subnets
 
-    # routes = [
-    #     {
-    #         name                   = "egress-internet"
-    #         description            = "route through IGW to access internet"
-    #         destination_range      = "0.0.0.0/0"
-    #         tags                   = "egress-inet"
-    #         next_hop_internet      = "true"
-    #     },
-    #     {
-    #         name                   = "app-proxy"
-    #         description            = "route through proxy to reach app"
-    #         destination_range      = "10.50.10.0/24"
-    #         tags                   = "app-proxy"
-    #         next_hop_instance      = "app-proxy-instance"
-    #         next_hop_instance_zone = "us-west1-a"
-    #     },
-    # ]
 }
 
+resource "google_compute_instance" "dm_gcp_vce" {
+  for_each     = {for region in var.network_regions: region.name => region}
+  name         = "sdwan-${each.value.name}"
+  machine_type = "n2-standard-4"
+  zone         = "${each.value.name}-a"
+  project      = var.project_id
+
+  boot_disk {
+    initialize_params {
+      image = "projects/vmware-sdwan-public/global/images/vce-342-102-r342-20200610-ga-3f5ad3b9e2"
+    }
+  }
+
+  network_interface {
+    network    = module.mgmt_vpc.network_self_link
+    subnetwork = module.mgmt_vpc.subnets["${each.value.name}/mgmt-vpc-subnet-${each.value.name}"].id
+  }
+  
+  network_interface {
+    network    = module.inet_vpc.network_self_link
+    subnetwork = module.inet_vpc.subnets["${each.value.name}/inet-vpc-subnet-${each.value.name}"].id
+
+    access_config {
+      // Ephemeral public IP
+    }
+  }
+
+  metadata = {
+    user-data = templatefile("${path.module}/vce.userdata.tpl", {
+      velocloud_vco              = "vco129-usvi1.velocloud.net"
+      velocloud_activaction_code = "YPTF-PN33-THTX-28V5"
+    })
+  }
+
+#   service_account {
+#     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
+#     email  = google_service_account.default.email
+#     scopes = ["cloud-platform"]
+#   }
+}

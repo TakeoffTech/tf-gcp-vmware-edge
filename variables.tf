@@ -16,6 +16,7 @@
 
 variable "project_id" {
   description = "The project ID to deploy to"
+  type        = string
 }
 
 variable "network_regions" {
@@ -25,5 +26,6 @@ variable "network_regions" {
 }
 
 # variable "lan_vpc" {
-#   description = "Name of exsisiting VPC for the lan side of the appliance"
+#   description = "Name or self_link of exsisiting VPC for the lan side of the appliance"
+#   type        = string
 # }
