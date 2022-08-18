@@ -44,11 +44,12 @@ func TestMultiRegionExample(t *testing.T) {
 		}
 
 		var network_regions = []map[string]string{
-			{
-				"name": "us-central1",
-				"inet_subnet": "192.168.20.0/24",
-				"mgmt_subnet": "192.168.10.0/24",
-				},{
+				{
+					"name": "us-central1",
+					"inet_subnet": "192.168.20.0/24",
+					"mgmt_subnet": "192.168.10.0/24",
+				},
+				{
 					"name": "us-west2",
 					"inet_subnet": "192.168.21.0/24",
 					"mgmt_subnet": "192.168.11.0/24",
