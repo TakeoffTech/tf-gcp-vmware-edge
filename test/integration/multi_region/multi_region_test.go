@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package multiple_buckets
+package multi_region
 
 import (
 	"fmt"
@@ -36,26 +36,56 @@ func TestMultiRegionExample(t *testing.T) {
 		match := utils.GetFirstMatchResult(t, services, "config.name", "compute.googleapis.com")
 		assert.Equal("ENABLED", match.Get("state").String(), "storage service should be enabled")
 
-		mgmtvpc := gcloud.Run(t, fmt.Sprintf("compute networks describe sdwan-mgmt-vpc --project %s", projectID))
-		assert.Equal("sdwan-mgmt-vpc", mgmtvpc.Get("name").String(), "sdwan-mgmt-vpc VPC is created")
+		// Validation VPCs, Subnets, and VM instances
 
-		inetvpc := gcloud.Run(t, fmt.Sprintf("compute networks describe sdwan-inet-vpc --project %s", projectID))
-		assert.Equal("sdwan-inet-vpc", inetvpc.Get("name").String(), "sdwan-inet-vpc VPC is created")
+		var vpcs = []string{
+			"mgmt-vpc", 
+			"inet-vpc",
+		}
 
-		// networkregions := default2.GetStringOutput("network_regions")
-		// subnets := gcloud.Run(t, fmt.Sprintf("compute networks subnets list --project %s", projectID))
+		var network_regions = []map[string]string{
+			{
+				"name": "us-central1",
+				"inet_subnet": "192.168.20.0/24",
+				"mgmt_subnet": "192.168.10.0/24",
+				},{
+					"name": "us-west2",
+					"inet_subnet": "192.168.21.0/24",
+					"mgmt_subnet": "192.168.11.0/24",
+				},
+			}
+			
+		projectvpcs := gcloud.Run(t, fmt.Sprintf("compute networks list --project %s", projectID))
+		subnets := gcloud.Run(t, fmt.Sprintf("compute networks subnets list --project %s", projectID))
+		instances := gcloud.Run(t, fmt.Sprintf("compute instances list --project %s", projectID))
 
-		// result := networkregions.Get(json, "#.name")
-		// for _, name := range result.Array() {
-		// 	println(name.String())
-		// }
-		// regionNames := []string{default2.GetStringOutput("network_regions")}
-		// println(regionNames)
+		for _, vpc := range vpcs {
+			// validate VPCs are created 
+			vpcname := "sdwan-" + vpc
+			assert.Equal(vpcname, projectvpcs.Get("#(name==" + vpcname + ").name").String(), vpcname + " VPC is created")
+			
+			for _, region := range network_regions {
+				//validate subnets in each regions 
+				subnetname := vpc + "-subnet-" + region["name"]
+				assert.Equal(subnetname, subnets.Get("#(name==" + subnetname + ").name").String(), subnetname + " subnet is created")
+			}
+		}
 
-		// assert.Equal("us-central1-inet-vpc-subnet", subnets.Get("name").String(), "us-central1-inet-vpc-subnet subnet is created")
-		// assert.Equal("us-central1-mgmt-vpc-subnet", subnets.Get("name").String(), "us-central1-mgmt-vpc-subnet subnet is created")
-		// assert.Equal("us-west2-inet-vpc-subnet", subnets.Get("name").String(), "us-west2-inet-vpc-subnet subnet is created")
-		// assert.Equal("us-west2-mgmt-vpc-subnet", subnets.Get("name").String(), "us-west2-mgmt-vpc-subnet subnet is created")
+		//Validate instances and network
+			for _, region := range network_regions {
+				// subnetname := vpc + "-subnet-" + region["name"]
+				instancename := "sdwan-" + region["name"]
+
+				//validate instance exsist 
+				assert.Equal(instancename, instances.Get("#(name==" + instancename + ").name").String(), instancename + " vce appliance is created")
+				// for _, vpc := range vpcs {
+				// 	vpcname := "sdwan-" + vpc
+
+				// 	//validate instance networking is connected to each vpc/subnet for the region
+				// 	assert.Equal(instancename, instances.Get("#(name==" + instancename + ").name").String(), instancename + " vce appliance is created")
+				// }
+			}
+
 
 	})
 	multiRegion.Test()
@@ -76,4 +106,3 @@ func TestMultiRegionExample(t *testing.T) {
 // 	})
 // 	vpc.Test()
 // }
-
