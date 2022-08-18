@@ -74,17 +74,18 @@ func TestMultiRegionExample(t *testing.T) {
 
 		//Validate instances and network
 			for _, region := range network_regions {
-				// subnetname := vpc + "-subnet-" + region["name"]
 				instancename := "sdwan-" + region["name"]
 
 				//validate instance exsist 
 				assert.Equal(instancename, instances.Get("#(name==" + instancename + ").name").String(), instancename + " vce appliance is created")
-				// for _, vpc := range vpcs {
-				// 	vpcname := "sdwan-" + vpc
+				for _, vpc := range vpcs {
+					network := fmt.Sprintf("https://www.googleapis.com/compute/v1/projects/%s/global/networks/sdwan-%s", projectID, vpc)
+					subnetwork := fmt.Sprintf("https://www.googleapis.com/compute/v1/projects/%s/regions/%s/subnetworks/%s-subnet-%s", projectID, region["name"], vpc, region["name"])
 
-				// 	//validate instance networking is connected to each vpc/subnet for the region
-				// 	assert.Equal(instancename, instances.Get("#(name==" + instancename + ").name").String(), instancename + " vce appliance is created")
-				// }
+					//validate instance networking is connected to each vpc/subnet for the region
+					assert.Equal(network, instances.Get("#(name==" + instancename + ").networkInterfaces.#(network=" + network + ").network").String(), instancename + " has an interface on network " + network )
+					assert.Equal(subnetwork, instances.Get("#(name==" + instancename + ").networkInterfaces.#(network=" + network + ").subnetwork").String(), instancename + " has an interface on subnetwork " + subnetwork )
+				}
 			}
 
 
