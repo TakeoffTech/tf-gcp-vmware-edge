@@ -21,11 +21,17 @@ variable "project_id" {
 
 variable "network_regions" {
   description = "List of regions and subnets to deploy VMware edge appliances"
-  type        = list(map(string))
+  type        = set(object(
+    {
+      name = string
+      inet_subnet = string
+      mgmt_subnet = string
+    }
+  ))
   default     = []
 }
 
-# variable "lan_vpc" {
-#   description = "Name or self_link of exsisiting VPC for the lan side of the appliance"
-#   type        = string
-# }
+variable "lan_vpc" {
+  description = "Name or self_link of exsisiting VPC for the lan side of the appliance"
+  type        = string
+}

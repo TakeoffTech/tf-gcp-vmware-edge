@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-module "sdwan" {
-  source = "../.."
-
-  project_id      = var.project_id
-  network_regions = var.network_regions
-  lan_vpc         = var.lan_vpc
+variable "project_id" {
+  description = "The ID of the project in which to provision resources."
+  type        = string
 }

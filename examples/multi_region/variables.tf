@@ -35,3 +35,8 @@ variable "network_regions" {
     },
   ]
 }
+
+variable "lan_vpc" {
+  description = "Name or self_link of exsisiting VPC for the lan side of the appliance"
+  type        = string
+}

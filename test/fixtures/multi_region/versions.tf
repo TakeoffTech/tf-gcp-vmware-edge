@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-module "sdwan" {
-  source = "../.."
-
-  project_id      = var.project_id
-  network_regions = var.network_regions
-  lan_vpc         = var.lan_vpc
+terraform {
+  # required_providers {
+  #   google = {
+  #     source  = "hashicorp/google"
+  #     version = "~> 4.0"
+  #   }
+  # }
+  required_version = ">= 0.13"
 }
