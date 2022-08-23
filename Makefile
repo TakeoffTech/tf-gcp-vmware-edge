@@ -29,7 +29,7 @@ docker_run:
 		-e SERVICE_ACCOUNT_JSON \
 		-v "$(CURDIR)":/workspace \
 		$(REGISTRY_URL)/${DOCKER_IMAGE_DEVELOPER_TOOLS}:${DOCKER_TAG_VERSION_DEVELOPER_TOOLS} \
-		/bin/bash
+		/bin/bash -i -c 'source /usr/local/bin/task_helper_functions.sh && source_test_env && init_credentials && git config --global --add safe.directory "*"; $$SHELL'
 
 # Execute prepare tests within the docker container
 .PHONY: docker_test_prepare

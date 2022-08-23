@@ -26,12 +26,14 @@ variable "network_regions" {
       name = string
       inet_subnet = string
       mgmt_subnet = string
+      lan_subnet  = string
     }
   ))
   default     = []
 }
 
 variable "lan_vpc" {
-  description = "Name or self_link of exsisiting VPC for the lan side of the appliance"
+  description = "Name or self_link of exsisiting VPC for the lan side of the appliance, if it doesn't exsist we will create a VPC"
   type        = string
+  default     = "notvalid"
 }

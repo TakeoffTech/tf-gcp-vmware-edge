@@ -15,12 +15,15 @@
  */
 
 locals {
+  lan_vpc_valid = data.google_compute_network.lan-vpc.name == var.lan_vpc
   default_vpcs = ["mgmt", "inet"]
-  all_vpcs = data.google_compute_network.lan-vpc.name == var.lan_vpc ? concat(local.default_vpcs, ["lan"]) : local.default_vpcs
+  create_vpcs = local.lan_vpc_valid == false ? concat(local.default_vpcs, ["lan"]) : local.default_vpcs
+  all_vpcs = concat(local.default_vpcs, ["lan"])
 
   subnets = {
     inet = local.inet_subnets,
-    mgmt = local.mgmt_subnets
+    mgmt = local.mgmt_subnets,
+    lan  = local.lan_subnets
   }
 
   mgmt_subnets = flatten([
@@ -39,17 +42,13 @@ locals {
       }
   ])
 
-  # network_interfaces = {
-  #   for vpc in module.sdwan_vpc : 
-  #   vpc.key => {
-  #     for region in var.network_regions : region.name => {
-  #       network = module.sdwan_vpc[(vpc)].network_self_link
-  #       #subnetwork = module.sdwan_vpc["mgmt"].subnets["${region.name}/${vpc}-vpc-subnet-${region.name}"].id
-  #       subnetwork = module.sdwan_vpc["mgmt"].subnets["us-central1/${vpc}-vpc-subnet-us-central1"].id
-  #       access_config = (vpc == "inet" ? [{}] : null )
-  #     } 
-  #   } 
-  # }
+  lan_subnets = flatten([
+      for network_region in var.network_regions : {
+          subnet_name   = "lan-vpc-subnet-${network_region.name}"
+          subnet_ip     = network_region.lan_subnet
+          subnet_region = network_region.name
+      }
+  ])
 
   default_network_interfaces = {
     for key, vpc in module.sdwan_vpc : 
@@ -57,36 +56,37 @@ locals {
       for region in var.network_regions : region.name => {
         network = vpc.network.network_self_link
         subnetwork = vpc.subnets["${region.name}/${vpc.network_name}-subnet-${region.name}"].self_link
-        access_config = (vpc == "inet" ? [{}] : null )
+        access_config = (key == "inet" ? [{}] : [] )
       }
     }
   }
 
-  network_interfaces = loacl.default_network_interfaces
-
-  # network_interfaces = merge(local.default_network_interfaces, {
-  #   var.vpc_name = {
-  #     network    = data.google_compute_network.lan_vpc.self_link
-  #     subnetwork = () 
-  #   }
-  # })
+  network_interfaces = merge(local.default_network_interfaces, {
+    "lan-vpc" = local.lan_vpc_valid ? {
+      for region in var.network_regions : region.name => {
+        network    = data.google_compute_network.lan-vpc.self_link
+        subnetwork = module.lan_subnets[0].subnets["${region.name}/lan-vpc-subnet-${region.name}"].self_link
+      }
+    } : {}
+  })
  
 }
 
 data "google_compute_network" "lan-vpc" {
    name    = var.lan_vpc
    project = var.project_id
-  lifecycle {
-    # The VPC name must match the var.lan_vpc variable
-    postcondition {
-      condition     = self.name == var.lan_vpc
-      error_message = "Please provide a valid lan VPC name"
-    }
-  }
+  # keeping this here, only support terraform 1.2
+  # lifecycle {
+  #   # The VPC name must match the var.lan_vpc variable
+  #   postcondition {
+  #     condition     = self.name == var.lan_vpc
+  #     error_message = "Please provide a valid lan VPC name"
+  #   }
+  # }
 }
 
 module "sdwan_vpc" {
-    for_each = toset(local.default_vpcs)
+    for_each = toset(local.create_vpcs)
     source  = "terraform-google-modules/network/google"
     version = "~> 5.0"
 
@@ -95,6 +95,17 @@ module "sdwan_vpc" {
     routing_mode = "GLOBAL"
 
     subnets = local.subnets[each.value]
+}
+
+module "lan_subnets" {
+  count  = local.lan_vpc_valid ? 1 : 0
+  source = "terraform-google-modules/network/google//modules/subnets"
+  version = "~> 5.0"
+
+  project_id   = var.project_id
+  network_name = data.google_compute_network.lan-vpc.name
+
+  subnets = local.subnets["lan"]
 }
 
 resource "google_compute_instance" "dm_gcp_vce" {
@@ -111,13 +122,13 @@ resource "google_compute_instance" "dm_gcp_vce" {
   }
 
   dynamic "network_interface" {
-    for_each = local.default_vpcs
+    for_each = local.all_vpcs
     content {
       network = local.network_interfaces[network_interface.value][each.value.name].network
       subnetwork = local.network_interfaces[network_interface.value][each.value.name].subnetwork
 
       dynamic "access_config" {
-        for_each = try(local.network_interfaces[network_interface][each.value.name].access_config, [])
+        for_each = try(local.network_interfaces[network_interface.value][each.value.name].access_config, [])
         content {
         }
       }

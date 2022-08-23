@@ -27,11 +27,13 @@ variable "network_regions" {
       name = "us-central1"   
       inet_subnet = "192.168.20.0/24"
       mgmt_subnet = "192.168.10.0/24"
+      lan_subnet  = "10.0.10.0/24"
     },
     {
       name = "us-west2"
       inet_subnet = "192.168.21.0/24"
       mgmt_subnet = "192.168.11.0/24"
+      lan_subnet  = "10.0.11.0/24"
     },
   ]
 }
@@ -39,4 +41,5 @@ variable "network_regions" {
 variable "lan_vpc" {
   description = "Name or self_link of exsisiting VPC for the lan side of the appliance"
   type        = string
+  default     = "notvalid"
 }

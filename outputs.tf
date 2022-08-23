@@ -19,11 +19,13 @@
 # }
 
 output "sdwan_vpc" {
+  value = "sdwan_vpc"
   # value = local.network_interfaces
-  value = local.all_vpcs
+  # value = local.all_vpcs
   # value = [for vpc in module.sdwan_vpc : vpc.network_name ]
   # value = [for key, vpc in module.sdwan_vpc : key ]
   # value = module.sdwan_vpc
+  # value = module.lan_subnets
 }
 
 output "mgmt_subnets" {
