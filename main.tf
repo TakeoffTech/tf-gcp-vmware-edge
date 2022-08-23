@@ -114,7 +114,7 @@ resource "google_compute_router" "lan_router" {
   name    = "sdwan-router-${each.value}"
   network = local.lan_vpc_valid ? data.google_compute_network.lan-vpc.self_link : module.sdwan_vpc["lan"].network_self_link
   bgp {
-    asn               = sum([65120, index([for region in var.network_regions: region.name], each.value)])  
+    asn               = sum([65120, index(tolist([for region in var.network_regions: region.name]), each.value)])  
     advertise_mode    = "CUSTOM"
     advertised_groups = ["ALL_SUBNETS"]
   }
