@@ -112,6 +112,7 @@ resource "google_compute_router" "lan_router" {
   for_each = toset([for region in var.network_regions: region.name])
 
   name    = "sdwan-router-${each.value}"
+  project = var.project_id
   region  = each.value
   network = local.lan_vpc_valid ? data.google_compute_network.lan-vpc.self_link : module.sdwan_vpc["lan"].network_self_link
   bgp {
