@@ -3,15 +3,15 @@ module "lan_vpc" {
     version = "~> 5.0"
 
     project_id   = var.project_id
-    network_name = "lan-vpc"
+    network_name = "exsisting-lan-vpc"
     routing_mode = "GLOBAL"
 
     subnets = [{
-        subnet_name   = "lan-vpc-subnet-1"
+        subnet_name   = "exsisting-lan-vpc-subnet-1"
         subnet_ip     = "10.128.0.0/24"
         subnet_region = "us-central1"
     },{
-        subnet_name   = "lan-vpc-subnet-2"
+        subnet_name   = "exsisting-lan-vpc-subnet-2"
         subnet_ip     = "10.129.0.0/24"
         subnet_region = "us-west2"
     }]
@@ -24,4 +24,7 @@ module "multi-region-fixture" {
  // set variables as required by the example module
  project_id          = var.project_id
  lan_vpc             = module.lan_vpc.network_name
+ depends_on = [
+   module.lan_vpc
+ ]
 }

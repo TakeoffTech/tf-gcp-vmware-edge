@@ -61,14 +61,14 @@ locals {
     }
   }
 
-  network_interfaces = merge(local.default_network_interfaces, {
-    "lan-vpc" = local.lan_vpc_valid ? {
+  network_interfaces = merge({
+    "lan" = local.lan_vpc_valid ? {
       for region in var.network_regions : region.name => {
         network    = data.google_compute_network.lan-vpc.self_link
         subnetwork = module.lan_subnets[0].subnets["${region.name}/lan-vpc-subnet-${region.name}"].self_link
       }
     } : {}
-  })
+  }, local.default_network_interfaces)
  
 }
 
