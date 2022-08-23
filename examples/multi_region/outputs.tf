@@ -26,3 +26,7 @@ output "project_id" {
 output "network_regions" {
   value = var.network_regions
 }
+
+output "sdwan_vpc" {
+  value = module.sdwan.sdwan_vpc
+}

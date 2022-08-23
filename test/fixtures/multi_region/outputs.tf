@@ -26,3 +26,7 @@ output "project_id" {
 output "network_regions" {
   value = module.multi-region-fixture.network_regions
 }
+
+output "sdwan_vpc" {
+  value = module.multi-region-fixture.sdwan_vpc
+}

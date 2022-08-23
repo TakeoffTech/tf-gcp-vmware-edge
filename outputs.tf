@@ -18,10 +18,18 @@
 #   value = google_storage_bucket.main.name
 # }
 
+output "sdwan_vpc" {
+  # value = local.network_interfaces
+  value = local.all_vpcs
+  # value = [for vpc in module.sdwan_vpc : vpc.network_name ]
+  # value = [for key, vpc in module.sdwan_vpc : key ]
+  # value = module.sdwan_vpc
+}
+
 output "mgmt_subnets" {
-  value = module.mgmt_vpc.subnets
+  value = module.sdwan_vpc["mgmt"].subnets
 }
 
 output "inet_subnets" {
-  value = module.mgmt_vpc.subnets
+  value = module.sdwan_vpc["inet"].subnets
 }

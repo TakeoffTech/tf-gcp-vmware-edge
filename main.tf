@@ -15,6 +15,14 @@
  */
 
 locals {
+  default_vpcs = ["mgmt", "inet"]
+  all_vpcs = data.google_compute_network.lan-vpc.name == var.lan_vpc ? concat(local.default_vpcs, ["lan"]) : local.default_vpcs
+
+  subnets = {
+    inet = local.inet_subnets,
+    mgmt = local.mgmt_subnets
+  }
+
   mgmt_subnets = flatten([
       for network_region in var.network_regions : {
           subnet_name   = "mgmt-vpc-subnet-${network_region.name}"
@@ -30,78 +38,63 @@ locals {
           subnet_region = network_region.name
       }
   ])
-  network_interfaces = {
-    mgmt = {
-      us-central1 = {
-        network    = module.mgmt_vpc.network_self_link
-        subnetwork = module.mgmt_vpc.subnets["us-central1/mgmt-vpc-subnet-us-central1"].id
-      },
-      us-west2 = {
-        network    = module.mgmt_vpc.network_self_link
-        subnetwork = module.mgmt_vpc.subnets["us-west2/mgmt-vpc-subnet-us-west2"].id
-      },
-    },
-    inet = {
-      us-central1 = {
-        network    = module.inet_vpc.network_self_link
-        subnetwork = module.inet_vpc.subnets["us-central1/inet-vpc-subnet-us-central1"].id
-        access_config = [{}]
-      },
-      us-west2 = {
-        network    = module.inet_vpc.network_self_link
-        subnetwork = module.inet_vpc.subnets["us-west2/inet-vpc-subnet-us-west2"].id
-        access_config = [{}]
+
+  # network_interfaces = {
+  #   for vpc in module.sdwan_vpc : 
+  #   vpc.key => {
+  #     for region in var.network_regions : region.name => {
+  #       network = module.sdwan_vpc[(vpc)].network_self_link
+  #       #subnetwork = module.sdwan_vpc["mgmt"].subnets["${region.name}/${vpc}-vpc-subnet-${region.name}"].id
+  #       subnetwork = module.sdwan_vpc["mgmt"].subnets["us-central1/${vpc}-vpc-subnet-us-central1"].id
+  #       access_config = (vpc == "inet" ? [{}] : null )
+  #     } 
+  #   } 
+  # }
+
+  default_network_interfaces = {
+    for key, vpc in module.sdwan_vpc : 
+    key => {
+      for region in var.network_regions : region.name => {
+        network = vpc.network.network_self_link
+        subnetwork = vpc.subnets["${region.name}/${vpc.network_name}-subnet-${region.name}"].self_link
+        access_config = (vpc == "inet" ? [{}] : null )
       }
     }
-
   }
+
+  network_interfaces = loacl.default_network_interfaces
+
+  # network_interfaces = merge(local.default_network_interfaces, {
+  #   var.vpc_name = {
+  #     network    = data.google_compute_network.lan_vpc.self_link
+  #     subnetwork = () 
+  #   }
+  # })
+ 
 }
 
 data "google_compute_network" "lan-vpc" {
    name    = var.lan_vpc
    project = var.project_id
+  lifecycle {
+    # The VPC name must match the var.lan_vpc variable
+    postcondition {
+      condition     = self.name == var.lan_vpc
+      error_message = "Please provide a valid lan VPC name"
+    }
+  }
 }
 
-# module "sdwan_vpc" {
-#     for_each = toset(["mgmt", "inet"])
-#     source  = "terraform-google-modules/network/google"
-#     version = "~> 5.0"
-
-#     project_id   = var.project_id
-#     network_name = "sdwan-${each.name}-vpc"
-#     routing_mode = "GLOBAL"
-#     dynamic "subnets" {
-#       for_each = {for region in var.network_regions: region.name => region}
-#       content {
-#         subnet_name = "${each.name}-vpc-subnet-${subnets.value["name"]}"
-#         subnet_ip     = subnets.value["${each.name}_subnet"]
-#         subnet_region = subnets.value["name"]
-#       }
-#     }
-# }
-
-module "mgmt_vpc" {
+module "sdwan_vpc" {
+    for_each = toset(local.default_vpcs)
     source  = "terraform-google-modules/network/google"
     version = "~> 5.0"
 
     project_id   = var.project_id
-    network_name = "sdwan-mgmt-vpc"
+    network_name = "${each.value}-vpc"
     routing_mode = "GLOBAL"
 
-    subnets = local.mgmt_subnets
-
-}
-
-module "inet_vpc" {
-    source  = "terraform-google-modules/network/google"
-    version = "~> 5.0"
-
-    project_id   = var.project_id
-    network_name = "sdwan-inet-vpc"
-    routing_mode = "GLOBAL"
-
-    subnets = local.inet_subnets
-
+    subnets = local.subnets[each.value]
 }
 
 resource "google_compute_instance" "dm_gcp_vce" {
@@ -118,17 +111,16 @@ resource "google_compute_instance" "dm_gcp_vce" {
   }
 
   dynamic "network_interface" {
-    for_each = toset(["inet", "mgmt"])
+    for_each = local.default_vpcs
     content {
       network = local.network_interfaces[network_interface.value][each.value.name].network
       subnetwork = local.network_interfaces[network_interface.value][each.value.name].subnetwork
 
       dynamic "access_config" {
-        for_each = try(local.network_interfaces[network_interface.value][each.value.name].access_config, [])
+        for_each = try(local.network_interfaces[network_interface][each.value.name].access_config, [])
         content {
         }
       }
-
     }
   }
   metadata = {
@@ -137,5 +129,4 @@ resource "google_compute_instance" "dm_gcp_vce" {
       velocloud_activaction_code = "YPTF-PN33-THTX-28V5"
     })
   }
-
 }
