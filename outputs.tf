@@ -26,6 +26,7 @@ output "sdwan_vpc" {
   # value = [for key, vpc in module.sdwan_vpc : key ]
   # value = module.sdwan_vpc
   # value = module.lan_subnets
+  # value = toset([for region in var.network_regions: region.name])
 }
 
 output "mgmt_subnets" {

@@ -108,6 +108,26 @@ module "lan_subnets" {
   subnets = local.subnets["lan"]
 }
 
+resource "google_compute_router" "lan_router" {
+  for_each = toset([for region in var.network_regions: region.name])
+
+  name    = "sdwan-router-${each.value}"
+  network = local.lan_vpc_valid ? data.google_compute_network.lan-vpc.self_link : module.sdwan_vpc["lan"].network_self_link
+  bgp {
+    asn               = sum([65120, index([for region in var.network_regions: region.name], each.value)])  
+    advertise_mode    = "CUSTOM"
+    advertised_groups = ["ALL_SUBNETS"]
+  }
+}
+
+# resource "google_compute_router_interface" "foobar" {
+#   for_each = [for region in var.network_regions: region.name]
+#   name       = "ra-1-0"
+#   router     = google_compute_router.lan_router[each.key].name
+#   region     = each.key
+#   ip_range   = "169.254.1.1/30"
+# }
+
 data "velocloud_profile" "hub_profile" {
     name = "Hubs"
 }
