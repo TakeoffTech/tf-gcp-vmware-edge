@@ -43,3 +43,13 @@ variable "lan_vpc" {
   type        = string
   default     = "notvalid"
 }
+
+variable "velocloud_vco" {
+  description = "Base hostname to the Velocloud Orchestrator instance"
+  type        = string 
+}
+
+variable "velocloud_token" {
+  description = "API Tokken for the Velocloud Orchestrator instance"
+  type        = string 
+}

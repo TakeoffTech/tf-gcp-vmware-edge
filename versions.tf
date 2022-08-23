@@ -16,14 +16,22 @@
 
 terraform {
   required_version = ">= 0.13"
-  # required_providers {
+  required_providers {
+    velocloud = {
+      source = "adeleporte/velocloud"
+    }
   #   google = {
   #     source  = "hashicorp/google"
   #     version = "~> 3.53, < 5.0"
   #   }
-  # }
+  }
 
   provider_meta "takeoff" {
     module_name = "blueprints/terraform/gcp-vmware-edge/v0.0.1"
   }
+}
+
+provider "velocloud" {
+  vco       = "https://${var.velocloud_vco}/portal/rest"
+  token     = var.velocloud_token
 }

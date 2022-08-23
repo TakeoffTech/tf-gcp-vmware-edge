@@ -108,6 +108,23 @@ module "lan_subnets" {
   subnets = local.subnets["lan"]
 }
 
+data "velocloud_profile" "hub_profile" {
+    name = "Hubs"
+}
+
+resource "velocloud_edge" "gcp_vce" {
+  for_each     = {for region in var.network_regions: region.name => region}
+
+  configurationid               = data.velocloud_profile.hub_profile.id
+  modelnumber                   = "virtual"
+
+  name                          = "${var.project_id}.sdwan-${each.value.name}"
+
+  site {
+    name                        = var.project_id
+  }
+}
+
 resource "google_compute_instance" "dm_gcp_vce" {
   for_each     = {for region in var.network_regions: region.name => region}
   name         = "sdwan-${each.value.name}"
@@ -136,8 +153,8 @@ resource "google_compute_instance" "dm_gcp_vce" {
   }
   metadata = {
     user-data = templatefile("${path.module}/vce.userdata.tpl", {
-      velocloud_vco              = "vco129-usvi1.velocloud.net"
-      velocloud_activaction_code = "YPTF-PN33-THTX-28V5"
+      velocloud_vco              = var.velocloud_vco
+      velocloud_activaction_code = velocloud_edge.gcp_vce[each.value.name].activationkey
     })
   }
 }
