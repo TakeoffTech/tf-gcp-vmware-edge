@@ -154,6 +154,8 @@ resource "google_compute_instance" "dm_gcp_vce" {
   machine_type = "n2-standard-4"
   zone         = "${each.value.name}-a"
   project      = var.project_id
+  
+  can_ip_forward = true
 
   boot_disk {
     initialize_params {
