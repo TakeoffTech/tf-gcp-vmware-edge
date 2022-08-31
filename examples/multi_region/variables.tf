@@ -38,12 +38,6 @@ variable "network_regions" {
   ]
 }
 
-variable "lan_vpc" {
-  description = "Name or self_link of exsisiting VPC for the lan side of the appliance"
-  type        = string
-  default     = "notvalid"
-}
-
 variable "velocloud_vco" {
   description = "Base hostname to the Velocloud Orchestrator instance"
   type        = string 

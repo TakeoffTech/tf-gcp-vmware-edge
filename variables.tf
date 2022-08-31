@@ -32,11 +32,21 @@ variable "network_regions" {
   default     = []
 }
 
-variable "lan_vpc" {
-  description = "Name or self_link of exsisiting VPC for the lan side of the appliance, if it doesn't exsist we will create a VPC"
-  type        = string
-  default     = "notvalid"
+variable "cloud_router_asns" {
+  type = list(number)
+  default = [ 65120, 65121, 65122, 65123 ]
 }
+
+variable "vce_asns" {
+  type = list(number)
+  default = [ 65220, 65221, 65222, 65223 ]
+}
+
+# variable "lan_vpc" {
+#   description = "Name or self_link of exsisiting VPC for the lan side of the appliance, if it doesn't exsist we will create a VPC"
+#   type        = string
+#   default     = "notvalid"
+# }
 
 variable "velocloud_vco" {
   description = "Base hostname to the Velocloud Orchestrator instance"

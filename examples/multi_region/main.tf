@@ -19,7 +19,6 @@ module "sdwan" {
 
   project_id      = var.project_id
   network_regions = var.network_regions
-  lan_vpc         = var.lan_vpc
 
   velocloud_vco   = var.velocloud_vco
   velocloud_token = var.velocloud_token
