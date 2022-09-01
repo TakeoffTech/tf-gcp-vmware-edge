@@ -28,6 +28,7 @@ module "project" {
     "cloudresourcemanager.googleapis.com",
     "storage-api.googleapis.com",
     "serviceusage.googleapis.com",
-    "compute.googleapis.com"
+    "compute.googleapis.com",
+    "networkconnectivity.googleapis.com"
   ]
 }

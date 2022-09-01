@@ -63,31 +63,8 @@ locals {
         network_ip = (key == "lan" ? google_compute_address.lan_subnet_static_ip["${region.name}"].address : "" )
       }
     }
-  }
-
-  # network_interfaces = merge({
-  #   "lan" = local.lan_vpc_valid ? {
-  #     for region in var.network_regions : region.name => {
-  #       network    = data.google_compute_network.lan-vpc.self_link
-  #       subnetwork = module.lan_subnets[0].subnets["${region.name}/lan-vpc-subnet-${region.name}"].self_link
-  #     }
-  #   } : {}
-  # }, local.default_network_interfaces)
- 
+  } 
 }
-
-# data "google_compute_network" "lan-vpc" {
-#    name    = var.lan_vpc
-#    project = var.project_id
-#   # keeping this here, only support terraform 1.2
-#   # lifecycle {
-#   #   # The VPC name must match the var.lan_vpc variable
-#   #   postcondition {
-#   #     condition     = self.name == var.lan_vpc
-#   #     error_message = "Please provide a valid lan VPC name"
-#   #   }
-#   # }
-# }
 
 module "sdwan_vpc" {
     for_each = toset(local.all_vpcs)
@@ -101,17 +78,6 @@ module "sdwan_vpc" {
     subnets = local.subnets[each.value]
 }
 
-# module "lan_subnets" {
-#   count  = local.lan_vpc_valid ? 1 : 0
-#   source = "terraform-google-modules/network/google//modules/subnets"
-#   version = "~> 5.0"
-
-#   project_id   = var.project_id
-#   network_name = data.google_compute_network.lan-vpc.name
-
-#   subnets = local.subnets["lan"]
-# }
-
 resource "google_compute_router" "lan_router" {
   for_each = toset([for region in var.network_regions: region.name])
 
@@ -120,19 +86,22 @@ resource "google_compute_router" "lan_router" {
   region  = each.value
   network = module.sdwan_vpc["lan"].network_self_link
   bgp {
-    #asn               = sum([65120, index(tolist([for region in var.network_regions: region.name]), each.value)])  
     asn               = var.cloud_router_asns[index(local.regions, each.value)]
     advertise_mode    = "CUSTOM"
     advertised_groups = ["ALL_SUBNETS"]
   }
 }
 
-# resource "google_compute_router_interface" "foobar" {
-#   for_each = [for region in var.network_regions: region.name]
-#   name       = "ra-1-0"
-#   router     = google_compute_router.lan_router[each.key].name
-#   region     = each.key
-#   ip_range   = "169.254.1.1/30"
+# module "router_nics" {
+#   source  = "terraform-google-modules/gcloud/google"
+#   version = "~> 3.0"
+
+#   platform = "linux"
+
+#   create_cmd_entrypoint  = "gcloud"
+#   create_cmd_body        = "compute routers add-interface ${routername} --interface-name=ra-1-0 --ip-address=${cidrhost(each.value.lan_subnet, 10)} --subnetwork=${lan_subnetwork_name} --region=${region} --project=${var.project_id}"
+#   destroy_cmd_entrypoint = "gcloud"
+#   destroy_cmd_body       = "compute routers remove-interface ${routername} --interface-name=ra-1-0 --region=${region} --project=${var.project_id}"
 # }
 
 data "velocloud_profile" "hub_profile" {
@@ -148,7 +117,8 @@ resource "google_compute_address" "lan_subnet_static_ip" {
   region       = each.value.name
   project      = var.project_id
 }
- resource "velocloud_edge" "gcp_vce" {
+
+resource "velocloud_edge" "gcp_vce" {
   for_each     = {for region in var.network_regions: region.name => region}
 
   configurationid               = data.velocloud_profile.hub_profile.id
@@ -214,5 +184,29 @@ resource "google_compute_instance" "dm_gcp_vce" {
       velocloud_vco              = var.velocloud_vco
       velocloud_activaction_code = velocloud_edge.gcp_vce[each.value.name].activationkey
     })
+  }
+}
+
+resource "google_network_connectivity_hub" "basic_hub" {
+  name        = "sdwanhub"
+  description = "SDWAN hub"
+
+  project = var.project_id
+}
+
+resource "google_network_connectivity_spoke" "primary" {
+  for_each = {for region in var.network_regions: region.name => region}
+  name = "sdwan-${each.value.name}"
+  location = each.value.name
+  description = "Spoke to the vce router appliance instance in ${each.value.name}"
+  project = var.project_id
+
+  hub =  google_network_connectivity_hub.basic_hub.id
+  linked_router_appliance_instances {
+    instances {
+        virtual_machine = google_compute_instance.dm_gcp_vce[each.value.name].self_link
+        ip_address = local.network_interfaces["lan"][each.value.name].network_ip
+    }
+    site_to_site_data_transfer = false
   }
 }
