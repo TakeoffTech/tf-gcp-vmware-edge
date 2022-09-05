@@ -15,43 +15,20 @@
  */
 
 locals {
-  # lan_vpc_valid = data.google_compute_network.lan-vpc.name == var.lan_vpc
-  # default_vpcs = ["mgmt", "inet"]
-  # create_vpcs = local.lan_vpc_valid == false ? concat(local.default_vpcs, ["lan"]) : local.default_vpcs
-  # all_vpcs = concat(local.default_vpcs, ["lan"])
-
   all_vpcs = ["mgmt", "inet", "lan"]
   regions = tolist([for region in var.network_regions: region.name])
 
   subnets = {
-    inet = local.inet_subnets,
-    mgmt = local.mgmt_subnets,
-    lan  = local.lan_subnets
+    for vpc in local.all_vpcs : vpc =>
+      flatten([
+      for network_region in var.network_regions : {
+          subnet_name   = "${vpc}-vpc-subnet-${network_region.name}"
+          subnet_ip     = network_region["${vpc}_subnet"]
+          # subnet_ip     = lookup(network_region, "${vpc}_subnet")
+          subnet_region = network_region.name
+      }
+      ])
   }
-
-  mgmt_subnets = flatten([
-      for network_region in var.network_regions : {
-          subnet_name   = "mgmt-vpc-subnet-${network_region.name}"
-          subnet_ip     = network_region.mgmt_subnet
-          subnet_region = network_region.name
-      }
-  ])
-
-  inet_subnets = flatten([
-      for network_region in var.network_regions : {
-          subnet_name   = "inet-vpc-subnet-${network_region.name}"
-          subnet_ip     = network_region.inet_subnet
-          subnet_region = network_region.name
-      }
-  ])
-
-  lan_subnets = flatten([
-      for network_region in var.network_regions : {
-          subnet_name   = "lan-vpc-subnet-${network_region.name}"
-          subnet_ip     = network_region.lan_subnet
-          subnet_region = network_region.name
-      }
-  ])
 
   network_interfaces = {
     for key, vpc in module.sdwan_vpc : 
@@ -78,6 +55,32 @@ module "sdwan_vpc" {
     subnets = local.subnets[each.value]
 }
 
+module "firewall_rules" {
+  source       = "terraform-google-modules/network/google//modules/firewall-rules"
+  project_id   = var.project_id
+  network_name = module.sdwan_vpc["inet"].network_name
+
+  rules = [{
+    name                    = "inet-vpc-allow-all-ingress"
+    description             = null
+    direction               = "INGRESS"
+    priority                = null
+    ranges                  = ["0.0.0.0/0"]
+    source_tags             = null
+    source_service_accounts = null
+    target_tags             = null
+    target_service_accounts = null
+    allow = [{
+      protocol = "udp"
+      ports    = ["2426"]
+    }]
+    deny = []
+    log_config = {
+      metadata = "EXCLUDE_ALL_METADATA"
+    }
+  }]
+}
+
 resource "google_compute_router" "lan_router" {
   for_each = toset([for region in var.network_regions: region.name])
 
@@ -92,17 +95,22 @@ resource "google_compute_router" "lan_router" {
   }
 }
 
-# module "router_nics" {
-#   source  = "terraform-google-modules/gcloud/google"
-#   version = "~> 3.0"
+# need to use gcloud command to create nics since it's not supported by the provider
+# feature request here: https://github.com/hashicorp/terraform-provider-google/issues/11206
+module "router_nics" {
+  for_each = {for region in var.network_regions: region.name => region}
+  source  = "terraform-google-modules/gcloud/google"
+  version = "~> 3.0"
 
-#   platform = "linux"
+  platform = "linux"
 
-#   create_cmd_entrypoint  = "gcloud"
-#   create_cmd_body        = "compute routers add-interface ${routername} --interface-name=ra-1-0 --ip-address=${cidrhost(each.value.lan_subnet, 10)} --subnetwork=${lan_subnetwork_name} --region=${region} --project=${var.project_id}"
-#   destroy_cmd_entrypoint = "gcloud"
-#   destroy_cmd_body       = "compute routers remove-interface ${routername} --interface-name=ra-1-0 --region=${region} --project=${var.project_id}"
-# }
+  create_cmd_entrypoint = "${path.module}/scripts/gcloud_scripts.sh"
+  create_cmd_body       = "add_router_nics sdwan-router-${each.value.name} ${cidrhost(each.value.lan_subnet, 10)} lan-vpc-subnet-${each.value.name} ${each.value.name} ${var.project_id}"
+
+  depends_on = [
+    google_compute_router.lan_router["*"]
+  ]
+}
 
 data "velocloud_profile" "hub_profile" {
     name = "Hubs"
@@ -209,4 +217,24 @@ resource "google_network_connectivity_spoke" "primary" {
     }
     site_to_site_data_transfer = false
   }
+}
+
+module "bgp_peers" {
+  for_each = {for region in var.network_regions: region.name => region}
+  source  = "terraform-google-modules/gcloud/google"
+  version = "~> 3.0"
+
+  platform = "linux"
+
+
+  create_cmd_entrypoint = "${path.module}/scripts/gcloud_scripts.sh"
+  create_cmd_body       = "add-bgp-peers sdwan-router-${each.value.name} ${cidrhost(each.value.lan_subnet, 2)} ${var.vce_asns[index(local.regions, each.value.name)]} ${google_compute_instance.dm_gcp_vce[each.value.name].self_link} ${each.value.name} ${var.project_id}"
+
+  destroy_cmd_entrypoint = "${path.module}/scripts/gcloud_scripts.sh"
+  destroy_cmd_body       = "remove-bgp-peers sdwan-router-${each.value.name} ${each.value.name} ${var.project_id}"
+
+  depends_on = [
+    google_compute_instance.dm_gcp_vce["*"],
+    module.router_nics["*"].wait,
+  ]
 }
