@@ -22,4 +22,6 @@ module "sdwan" {
 
   velocloud_vco   = var.velocloud_vco
   velocloud_token = var.velocloud_token
+  
+  cloud_router_advertised_ip_ranges = var.cloud_router_advertised_ip_ranges
 }

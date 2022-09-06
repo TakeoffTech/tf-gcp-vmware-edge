@@ -11,12 +11,12 @@ nextip(){
 add_router_nics() {
     gcloud compute routers add-interface $1 --interface-name=ra-1-0 --ip-address=$2 --subnetwork=$3 --region=$4 --project=$5
     BACKUP_IP=$(nextip $2)
-    gcloud compute routers add-interface $1 --interface-name=ra-1-1 --ip-address=$BACKUP_IP --subnetwork=$3 --redundant-interface=ra-1-0 --region=$4 --project=$5
+    gcloud compute routers add-interface $1 --interface-name=ra-1-1 --redundant-interface=ra-1-0 --ip-address=$BACKUP_IP --subnetwork=$3 --region=$4 --project=$5
 }
 
 add-bgp-peers() {
-  gcloud compute routers add-bgp-peer $1 --peer-name=ra-1-0-peer0 --interface=ra-1-0 --peer-ip-address=$2 --peer-asn=$3 --instance=$4 --instance-zone=$5-a --region=$5 --bfd-session-initialization-mode=passive --project=$6
-  gcloud compute routers add-bgp-peer $1 --peer-name=ra-1-1-peer0 --interface=ra-1-1 --peer-ip-address=$2 --peer-asn=$3 --instance=$4 --instance-zone=$5-a --region=$5 --bfd-session-initialization-mode=passive --project=$6
+  gcloud compute routers add-bgp-peer $1 --peer-name=ra-1-0-peer0 --interface=ra-1-0 --peer-ip-address=$2 --peer-asn=$3 --instance=$4 --instance-zone=$5-a --region=$5 --bfd-session-initialization-mode=passive --project=$6 --advertisement-mode=default
+  gcloud compute routers add-bgp-peer $1 --peer-name=ra-1-1-peer0 --interface=ra-1-1 --peer-ip-address=$2 --peer-asn=$3 --instance=$4 --instance-zone=$5-a --region=$5 --bfd-session-initialization-mode=passive --project=$6 --advertisement-mode=default
 }
 
 remove-bgp-peers() {

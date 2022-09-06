@@ -42,11 +42,12 @@ variable "vce_asns" {
   default = [ 65220, 65221, 65222, 65223 ]
 }
 
-# variable "lan_vpc" {
-#   description = "Name or self_link of exsisiting VPC for the lan side of the appliance, if it doesn't exsist we will create a VPC"
-#   type        = string
-#   default     = "notvalid"
-# }
+variable "vce_machine_type" {
+  description = "GCP machine type for the Velocloud edge instance"
+  type        = string
+  default     = "n2-standard-4"
+  
+}
 
 variable "velocloud_vco" {
   description = "Base hostname to the Velocloud Orchestrator instance"
@@ -54,6 +55,23 @@ variable "velocloud_vco" {
 }
 
 variable "velocloud_token" {
-  description = "API Tokken for the Velocloud Orchestrator instance"
+  description = "API token for the Velocloud Orchestrator instance"
   type        = string 
+}
+
+variable "velocloud_hub_profile" {
+  description = "Name of a configuration profile to attach to the Veloloud edge instances"
+  type        = string
+  default     = "Hubs-Test"
+}
+
+variable "cloud_router_advertised_ip_ranges" {
+  description = "A List of additional advertised ip ranges from the cloud router to the vce appliance"
+  type = set(object(
+    {
+      range = string
+      description = string
+    }
+  ))
+  default     = []
 }

@@ -47,3 +47,21 @@ variable "velocloud_token" {
   description = "API Tokken for the Velocloud Orchestrator instance"
   type        = string 
 }
+
+variable "cloud_router_advertised_ip_ranges" {
+  description = "A List of additional advertised ip ranges from the cloud router to the vce appliance"
+  type = set(object(
+    {
+      range = string
+      description = string
+    }
+  ))
+  default     = [{
+    range = "10.128.0.0/24"
+    description = "10.128 route"
+  },
+  {
+    range = "10.254.0.0/16"
+    description = ""
+  }]
+}

@@ -55,13 +55,13 @@ module "sdwan_vpc" {
     subnets = local.subnets[each.value]
 }
 
-module "firewall_rules" {
+module "inet_firewall_rules" {
   source       = "terraform-google-modules/network/google//modules/firewall-rules"
   project_id   = var.project_id
   network_name = module.sdwan_vpc["inet"].network_name
 
   rules = [{
-    name                    = "inet-vpc-allow-all-ingress"
+    name                    = "inet-vpc-allow-vcmp-ingress"
     description             = null
     direction               = "INGRESS"
     priority                = null
@@ -81,6 +81,32 @@ module "firewall_rules" {
   }]
 }
 
+module "lan_firewall_rules" {
+  source       = "terraform-google-modules/network/google//modules/firewall-rules"
+  project_id   = var.project_id
+  network_name = module.sdwan_vpc["lan"].network_name
+
+  rules = [{
+    name                    = "lan-vpc-allow-all-ingress"
+    description             = null
+    direction               = "INGRESS"
+    priority                = null
+    ranges                  = ["0.0.0.0/0"]
+    source_tags             = null
+    source_service_accounts = null
+    target_tags             = null
+    target_service_accounts = null
+    allow = [{
+      protocol = "all"
+      ports    = []
+    }]
+    deny = []
+    log_config = {
+      metadata = "EXCLUDE_ALL_METADATA"
+    }
+  }]
+}
+
 resource "google_compute_router" "lan_router" {
   for_each = toset([for region in var.network_regions: region.name])
 
@@ -92,6 +118,13 @@ resource "google_compute_router" "lan_router" {
     asn               = var.cloud_router_asns[index(local.regions, each.value)]
     advertise_mode    = "CUSTOM"
     advertised_groups = ["ALL_SUBNETS"]
+    dynamic "advertised_ip_ranges" {
+      for_each = var.cloud_router_advertised_ip_ranges
+      content {
+        range = advertised_ip_ranges.value.range
+        description = advertised_ip_ranges.value.description != "" ? advertised_ip_ranges.value.description : "Route for ${advertised_ip_ranges.value.range}"
+      }
+    }
   }
 }
 
@@ -108,12 +141,13 @@ module "router_nics" {
   create_cmd_body       = "add_router_nics sdwan-router-${each.value.name} ${cidrhost(each.value.lan_subnet, 10)} lan-vpc-subnet-${each.value.name} ${each.value.name} ${var.project_id}"
 
   depends_on = [
-    google_compute_router.lan_router["*"]
+    google_compute_router.lan_router["*"],
+    module.sdwan_vpc["*"]
   ]
 }
 
 data "velocloud_profile" "hub_profile" {
-    name = "Hubs"
+    name = var.velocloud_hub_profile
 }
 
 resource "google_compute_address" "lan_subnet_static_ip" {
@@ -128,12 +162,9 @@ resource "google_compute_address" "lan_subnet_static_ip" {
 
 resource "velocloud_edge" "gcp_vce" {
   for_each     = {for region in var.network_regions: region.name => region}
-
   configurationid               = data.velocloud_profile.hub_profile.id
   modelnumber                   = "virtual"
-
   name                          = "${var.project_id}.sdwan-${each.value.name}"
-
   site {
     name                        = var.project_id
   }
@@ -152,6 +183,7 @@ resource "velocloud_device_settings" "gcp_vce" {
     name            = "GE3"
     cidr_ip         = local.network_interfaces["lan"][each.value.name].network_ip
     cidr_prefix     = substr(each.value.lan_subnet, -2, -1)
+    gateway         = cidrhost(each.value.lan_subnet, 1)
     netmask         = cidrnetmask(each.value.lan_subnet)
     type            = "STATIC"
   }
@@ -161,7 +193,7 @@ resource "velocloud_device_settings" "gcp_vce" {
 resource "google_compute_instance" "dm_gcp_vce" {
   for_each     = {for region in var.network_regions: region.name => region}
   name         = "sdwan-${each.value.name}"
-  machine_type = "n2-standard-4"
+  machine_type = var.vce_machine_type
   zone         = "${each.value.name}-a"
   project      = var.project_id
   
@@ -215,7 +247,7 @@ resource "google_network_connectivity_spoke" "primary" {
         virtual_machine = google_compute_instance.dm_gcp_vce[each.value.name].self_link
         ip_address = local.network_interfaces["lan"][each.value.name].network_ip
     }
-    site_to_site_data_transfer = false
+    site_to_site_data_transfer = true
   }
 }
 
@@ -236,5 +268,6 @@ module "bgp_peers" {
   depends_on = [
     google_compute_instance.dm_gcp_vce["*"],
     module.router_nics["*"].wait,
+    google_network_connectivity_spoke.primary["*"]
   ]
 }
