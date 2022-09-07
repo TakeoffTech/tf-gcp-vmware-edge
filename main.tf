@@ -22,8 +22,8 @@ locals {
     for vpc in local.all_vpcs : vpc =>
     flatten([
       for network_region in var.network_regions : {
-        subnet_name = "${vpc}-vpc-subnet-${network_region.name}"
-        subnet_ip   = network_region["${vpc}_subnet"]
+        subnet_name   = "${vpc}-vpc-subnet-${network_region.name}"
+        subnet_ip     = network_region["${vpc}_subnet"]
         subnet_region = network_region.name
       }
     ])

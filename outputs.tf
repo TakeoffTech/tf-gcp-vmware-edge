@@ -14,26 +14,14 @@
  * limitations under the License.
  */
 
-# output "bucket_name" {
-#   value = google_storage_bucket.main.name
-# }
-
-output "sdwan_vpc" {
-  value = "sdwan_vpc"
-  # value = local.network_interfaces
-  # value = local.all_vpcs
-  # value = [for vpc in module.sdwan_vpc : vpc.network_name ]
-  # value = [for key, vpc in module.sdwan_vpc : key ]
-  # value = module.sdwan_vpc
-  # value = module.lan_subnets
-  # value = toset([for region in var.network_regions: region.name])
-  # value = local.subnets
-}
-
 output "mgmt_subnets" {
   value = module.sdwan_vpc["mgmt"].subnets
 }
 
 output "inet_subnets" {
   value = module.sdwan_vpc["inet"].subnets
+}
+
+output "lan_subnets" {
+  value = module.sdwan_vpc["lan"].subnets
 }

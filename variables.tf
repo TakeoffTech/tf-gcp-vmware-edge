@@ -66,7 +66,7 @@ variable "velocloud_hub_profile" {
 }
 
 variable "cloud_router_advertised_ip_ranges" {
-  description = "A List of additional advertised ip ranges from the cloud router to the vce appliance"
+  description = "A List of additional ip ranges to advertise from the cloud router to the vce appliance"
   type = set(object(
     {
       range       = string
