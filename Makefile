@@ -71,7 +71,7 @@ docker_test_lint:
 		-e EXCLUDE_LINT_DIRS \
 		-v "$(CURDIR)":/workspace \
 		$(REGISTRY_URL)/${DOCKER_IMAGE_DEVELOPER_TOOLS}:${DOCKER_TAG_VERSION_DEVELOPER_TOOLS} \
-		/usr/local/bin/test_lint.sh
+		/bin/bash -c 'git config --global --add safe.directory "*" && /usr/local/bin/test_lint.sh'
 
 # Generate documentation
 .PHONY: docker_generate_docs

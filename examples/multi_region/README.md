@@ -19,7 +19,6 @@ This example illustrates how to use the `sdwan` module.
 |------|-------------|
 | network\_regions | n/a |
 | project\_id | The ID of the project in which to provision resources. |
-| sdwan\_vpc | n/a |
 
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 

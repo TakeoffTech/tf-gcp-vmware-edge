@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-# output "bucket_name" {
-#   description = "The name of the bucket."
-#   value       = module.sdwan.bucket_name
-# }
 output "project_id" {
   description = "The ID of the project in which to provision resources."
   value       = var.project_id
@@ -25,8 +21,4 @@ output "project_id" {
 
 output "network_regions" {
   value = var.network_regions
-}
-
-output "sdwan_vpc" {
-  value = module.sdwan.sdwan_vpc
 }
