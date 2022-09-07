@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Google LLC
+ * Copyright 2021 Takeoff Technologies Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,13 @@ variable "network_regions" {
   type        = list(map(string))
   default = [
     {
-      name = "us-central1"   
+      name        = "us-central1"
       inet_subnet = "192.168.20.0/24"
       mgmt_subnet = "192.168.10.0/24"
       lan_subnet  = "10.0.10.0/24"
     },
     {
-      name = "us-west2"
+      name        = "us-west2"
       inet_subnet = "192.168.21.0/24"
       mgmt_subnet = "192.168.11.0/24"
       lan_subnet  = "10.0.11.0/24"
@@ -40,28 +40,28 @@ variable "network_regions" {
 
 variable "velocloud_vco" {
   description = "Base hostname to the Velocloud Orchestrator instance"
-  type        = string 
+  type        = string
 }
 
 variable "velocloud_token" {
   description = "API Tokken for the Velocloud Orchestrator instance"
-  type        = string 
+  type        = string
 }
 
 variable "cloud_router_advertised_ip_ranges" {
   description = "A List of additional advertised ip ranges from the cloud router to the vce appliance"
   type = set(object(
     {
-      range = string
+      range       = string
       description = string
     }
   ))
-  default     = [{
-    range = "10.128.0.0/24"
+  default = [{
+    range       = "10.128.0.0/24"
     description = "10.128 route"
-  },
-  {
-    range = "10.254.0.0/16"
-    description = ""
+    },
+    {
+      range       = "10.254.0.0/16"
+      description = ""
   }]
 }

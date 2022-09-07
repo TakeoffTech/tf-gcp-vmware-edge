@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Google LLC
+ * Copyright 2021 Takeoff Technologies Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,42 +21,42 @@ variable "project_id" {
 
 variable "network_regions" {
   description = "List of regions and subnets to deploy VMware edge appliances"
-  type        = set(object(
+  type = set(object(
     {
-      name = string
+      name        = string
       inet_subnet = string
       mgmt_subnet = string
       lan_subnet  = string
     }
   ))
-  default     = []
+  default = []
 }
 
 variable "cloud_router_asns" {
-  type = list(number)
-  default = [ 65120, 65121, 65122, 65123 ]
+  type    = list(number)
+  default = [65120, 65121, 65122, 65123]
 }
 
 variable "vce_asns" {
-  type = list(number)
-  default = [ 65220, 65221, 65222, 65223 ]
+  type    = list(number)
+  default = [65220, 65221, 65222, 65223]
 }
 
 variable "vce_machine_type" {
   description = "GCP machine type for the Velocloud edge instance"
   type        = string
   default     = "n2-standard-4"
-  
+
 }
 
 variable "velocloud_vco" {
   description = "Base hostname to the Velocloud Orchestrator instance"
-  type        = string 
+  type        = string
 }
 
 variable "velocloud_token" {
   description = "API token for the Velocloud Orchestrator instance"
-  type        = string 
+  type        = string
 }
 
 variable "velocloud_hub_profile" {
@@ -69,9 +69,9 @@ variable "cloud_router_advertised_ip_ranges" {
   description = "A List of additional advertised ip ranges from the cloud router to the vce appliance"
   type = set(object(
     {
-      range = string
+      range       = string
       description = string
     }
   ))
-  default     = []
+  default = []
 }

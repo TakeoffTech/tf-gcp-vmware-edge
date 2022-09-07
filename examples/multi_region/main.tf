@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Google LLC
+ * Copyright 2021 Takeoff Technologies Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,6 @@ module "sdwan" {
 
   velocloud_vco   = var.velocloud_vco
   velocloud_token = var.velocloud_token
-  
+
   cloud_router_advertised_ip_ranges = var.cloud_router_advertised_ip_ranges
 }

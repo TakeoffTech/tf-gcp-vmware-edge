@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Google LLC
+ * Copyright 2021 Takeoff Technologies Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ terraform {
     velocloud = {
       source = "adeleporte/velocloud"
     }
-  #   google = {
-  #     source  = "hashicorp/google"
-  #     version = "~> 3.53, < 5.0"
-  #   }
+    #   google = {
+    #     source  = "hashicorp/google"
+    #     version = "~> 3.53, < 5.0"
+    #   }
   }
 
   provider_meta "takeoff" {
@@ -32,6 +32,6 @@ terraform {
 }
 
 provider "velocloud" {
-  vco       = "https://${var.velocloud_vco}/portal/rest"
-  token     = var.velocloud_token
+  vco   = "https://${var.velocloud_vco}/portal/rest"
+  token = var.velocloud_token
 }
