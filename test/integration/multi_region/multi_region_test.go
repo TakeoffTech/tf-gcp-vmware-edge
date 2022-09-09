@@ -22,6 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-foundation-toolkit/infra/blueprint-test/pkg/tft"
 	"github.com/GoogleCloudPlatform/cloud-foundation-toolkit/infra/blueprint-test/pkg/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/gruntwork-io/terratest/modules/terraform"
 )
 
 func TestMultiRegionExample(t *testing.T) {
@@ -31,29 +32,31 @@ func TestMultiRegionExample(t *testing.T) {
 		multiRegion.DefaultVerify(assert)
 
 		projectID := multiRegion.GetStringOutput("project_id")
+
+		type Region struct {
+			Name string
+			Inet_subnet string
+			Mgmt_subnet string
+			Lan_subnet string
+		  }
+		var networkRegions []Region
+
+		terraform.OutputStruct(t, multiRegion.GetTFOptions(), "network_regions", &networkRegions)
+
 		services := gcloud.Run(t, "services list", gcloud.WithCommonArgs([]string{"--project", projectID, "--format", "json"})).Array()
 
-		match := utils.GetFirstMatchResult(t, services, "config.name", "compute.googleapis.com")
-		assert.Equal("ENABLED", match.Get("state").String(), "storage service should be enabled")
+		computeMatch := utils.GetFirstMatchResult(t, services, "config.name", "compute.googleapis.com")
+		assert.Equal("ENABLED", computeMatch.Get("state").String(), "Compute service should be enabled")
+
+		nccMatch := utils.GetFirstMatchResult(t, services, "config.name", "networkconnectivity.googleapis.com")
+		assert.Equal("ENABLED", nccMatch.Get("state").String(), "Compute service should be enabled")
 
 		// Validation VPCs, Subnets, and VM instances
 
 		var vpcs = []string{
 			"mgmt-vpc",
 			"inet-vpc",
-		}
-
-		var network_regions = []map[string]string{
-			{
-				"name":        "us-central1",
-				"inet_subnet": "192.168.20.0/24",
-				"mgmt_subnet": "192.168.10.0/24",
-			},
-			{
-				"name":        "us-west2",
-				"inet_subnet": "192.168.21.0/24",
-				"mgmt_subnet": "192.168.11.0/24",
-			},
+			"lan-vpc",
 		}
 
 		projectvpcs := gcloud.Run(t, fmt.Sprintf("compute networks list --project %s", projectID))
@@ -62,25 +65,24 @@ func TestMultiRegionExample(t *testing.T) {
 
 		for _, vpc := range vpcs {
 			// validate VPCs are created
-			vpcname := "sdwan-" + vpc
-			assert.Equal(vpcname, projectvpcs.Get("#(name=="+vpcname+").name").String(), vpcname+" VPC is created")
+			assert.Equal(vpc, projectvpcs.Get("#(name=="+vpc+").name").String(), vpc+" VPC is created")
 
-			for _, region := range network_regions {
+			for _, region := range networkRegions {
 				//validate subnets in each regions
-				subnetname := vpc + "-subnet-" + region["name"]
+				subnetname := vpc + "-subnet-" + region.Name
 				assert.Equal(subnetname, subnets.Get("#(name=="+subnetname+").name").String(), subnetname+" subnet is created")
 			}
 		}
 
 		//Validate instances and attached networks the module manages
-		for _, region := range network_regions {
-			instancename := "sdwan-" + region["name"]
+		for _, region := range networkRegions {
+			instancename := "sdwan-" + region.Name
 
 			//validate instance exsist
 			assert.Equal(instancename, instances.Get("#(name=="+instancename+").name").String(), instancename+" vce appliance is created")
 			for _, vpc := range vpcs {
-				network := fmt.Sprintf("https://www.googleapis.com/compute/v1/projects/%s/global/networks/sdwan-%s", projectID, vpc)
-				subnetwork := fmt.Sprintf("https://www.googleapis.com/compute/v1/projects/%s/regions/%s/subnetworks/%s-subnet-%s", projectID, region["name"], vpc, region["name"])
+				network := fmt.Sprintf("https://www.googleapis.com/compute/v1/projects/%s/global/networks/%s", projectID, vpc)
+				subnetwork := fmt.Sprintf("https://www.googleapis.com/compute/v1/projects/%s/regions/%s/subnetworks/%s-subnet-%s", projectID, region.Name, vpc, region.Name)
 
 				//validate instance networking is connected to each vpc/subnet for the region
 				assert.Equal(network, instances.Get("#(name=="+instancename+").networkInterfaces.#(network="+network+").network").String(), instancename+" has an interface on network "+network)
@@ -89,8 +91,8 @@ func TestMultiRegionExample(t *testing.T) {
 		}
 
 		//Validate instances and lan network attachment
-		for _, region := range network_regions {
-			instancename := "sdwan-" + region["name"]
+		for _, region := range networkRegions {
+			instancename := "sdwan-" + region.Name
 			vpc := "lan-vpc"
 
 			network := fmt.Sprintf("https://www.googleapis.com/compute/v1/projects/%s/global/networks/%s", projectID, vpc)
@@ -102,22 +104,40 @@ func TestMultiRegionExample(t *testing.T) {
 
 		}
 
+		//Validate NCC
+		hubs := gcloud.Run(t, fmt.Sprintf("network-connectivity hubs list --project %s", projectID)).Array()
+		spokes := gcloud.Run(t, fmt.Sprintf("network-connectivity spokes list --project %s", projectID)).Array()
+
+		hubMatch := utils.GetFirstMatchResult(t, hubs, "name", fmt.Sprintf("projects/%s/locations/global/hubs/sdwanhub", projectID))
+		assert.Equal("ACTIVE", hubMatch.Get("state").String(), "SDWAN Hub created")
+
+		for _, region := range networkRegions {
+			spokeMatch := utils.GetFirstMatchResult(t, spokes, "name", fmt.Sprintf("projects/%s/locations/%[2]s/spokes/sdwan-%[2]s", projectID, region.Name))
+			assert.Equal("ACTIVE", spokeMatch.Get("state").String(), fmt.Sprintf("Spoke is active in %s", region.Name))
+		}
+
+		//Validate Cloud Routers
+		routers := gcloud.Run(t, fmt.Sprintf("compute routers list --project %s", projectID))
+		routerInterfaceNames := []string{"ra-1-0", "ra-1-1"}
+
+		for _, region := range networkRegions {
+			routerName := fmt.Sprintf("sdwan-router-%s", region.Name)
+			routerInterfaces := routers.Get("#(name=="+routerName+").interfaces")
+			bgpPeers := routers.Get("#(name=="+routerName+").bgpPeers")
+			assert.Equal(routerName, routers.Get("#(name=="+routerName+").name").String(), fmt.Sprintf("Cloudrouter %s is created", routerName))
+
+			//validate interfaces on the routers
+			for _, routerInterfaceName := range routerInterfaceNames {
+				assert.Equal(routerInterfaceName, routerInterfaces.Get("#(name=="+routerInterfaceName+").name").String(), routerInterfaceName + " Interface exists on " + routerName)
+			
+				//Validate BGPPeers
+				bgpPeerName := routerInterfaceName + "-peer0"
+				assert.Equal(bgpPeerName, bgpPeers.Get("#(name=="+bgpPeerName+").name").String(), bgpPeerName + " bgp peer exists on " + routerName)
+
+			}
+		}
+
+
 	})
 	multiRegion.Test()
 }
-
-// func VPCNetworksTest(t *testing.T) {
-// 	vpc := tft.NewTFBlueprintTest(t)
-
-// 	vpc.DefineVerify(func(assert *assert.Assertions) {
-// 		vpc.DefaultVerify(assert)
-
-// 		projectID := vpc.GetStringOutput("project_id")
-// 		op := gcloud.Run(t, fmt.Sprintf("compute networks describe sdwan-mgmt-vpc --project %s", projectID))
-
-// 		// match := utils.GetFirstMatchResult(t, sdwanMgmtVpc, "name", "sdwan-mgmt-vpc")
-// 		// assert.Equal("ENABLED", match.Get("state").String(), "storage service should be enabled")
-// 		assert.Equal("sdwan-mgmt-vpc", op.Get("name"), "sdwan-mgmt-vpc VPC is created")
-// 	})
-// 	vpc.Test()
-// }

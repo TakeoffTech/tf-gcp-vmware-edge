@@ -3,7 +3,7 @@ module github.com/takeofftech/tf-gcp-vmware-edge/sdwan/test/integration
 go 1.16
 
 require (
-	github.com/GoogleCloudPlatform/cloud-foundation-toolkit/infra/blueprint-test v0.2.0
+	github.com/GoogleCloudPlatform/cloud-foundation-toolkit/infra/blueprint-test v0.3.0
 	github.com/apparentlymart/go-textseg/v12 v12.0.0 // indirect
 	github.com/coreos/go-etcd v2.0.0+incompatible // indirect
 	github.com/cpuguy83/go-md2man v1.0.10 // indirect
