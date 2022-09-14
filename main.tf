@@ -56,6 +56,7 @@ module "sdwan_vpc" {
 
 module "inet_firewall_rules" {
   source       = "terraform-google-modules/network/google//modules/firewall-rules"
+  version      = "~> 5.0"
   project_id   = var.project_id
   network_name = module.sdwan_vpc["inet"].network_name
 
@@ -82,6 +83,7 @@ module "inet_firewall_rules" {
 
 module "lan_firewall_rules" {
   source       = "terraform-google-modules/network/google//modules/firewall-rules"
+  version      = "~> 5.0"
   project_id   = var.project_id
   network_name = module.sdwan_vpc["lan"].network_name
 
@@ -189,8 +191,15 @@ resource "velocloud_device_settings" "gcp_vce" {
 
 }
 
+resource "time_sleep" "wait_300_seconds" {
+  depends_on = [velocloud_edge.gcp_vce["*"]]
+
+  destroy_duration = "300s"
+}
+
 resource "google_compute_instance" "dm_gcp_vce" {
   for_each     = { for region in var.network_regions : region.name => region }
+  depends_on   = [time_sleep.wait_300_seconds]
   name         = "sdwan-${each.value.name}"
   machine_type = var.vce_machine_type
   zone         = "${each.value.name}-a"

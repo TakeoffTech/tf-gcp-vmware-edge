@@ -20,10 +20,10 @@ terraform {
     velocloud = {
       source = "adeleporte/velocloud"
     }
-    #   google = {
-    #     source  = "hashicorp/google"
-    #     version = "~> 3.53, < 5.0"
-    #   }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.8"
+    }
   }
 
   provider_meta "takeoff" {
