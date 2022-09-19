@@ -63,9 +63,11 @@ Functional examples are included in the
 
 | Name | Description |
 |------|-------------|
-| inet\_subnets | n/a |
-| lan\_subnets | n/a |
-| mgmt\_subnets | n/a |
+| inet\_subnets | A map with keys of form subnet\_region/subnet\_name and values being the outputs of the google\_compute\_subnetwork resources used to create corresponding subnets within the inet VPC. |
+| lan\_network\_id | The ID of the lan VPC being created |
+| lan\_self\_link | The URI of the lan VPC being created |
+| lan\_subnets | A map with keys of form subnet\_region/subnet\_name and values being the outputs of the google\_compute\_subnetwork resources used to create corresponding subnets within the lan VPC. |
+| mgmt\_subnets | A map with keys of form subnet\_region/subnet\_name and values being the outputs of the google\_compute\_subnetwork resources used to create corresponding subnets within the mgmt VPC. |
 
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
