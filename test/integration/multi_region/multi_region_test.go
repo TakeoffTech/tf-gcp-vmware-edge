@@ -129,14 +129,13 @@ func TestMultiRegionExample(t *testing.T) {
 			//validate interfaces on the routers
 			for _, routerInterfaceName := range routerInterfaceNames {
 				assert.Equal(routerInterfaceName, routerInterfaces.Get("#(name=="+routerInterfaceName+").name").String(), routerInterfaceName + " Interface exists on " + routerName)
-			
+
 				//Validate BGPPeers
 				bgpPeerName := routerInterfaceName + "-peer0"
 				assert.Equal(bgpPeerName, bgpPeers.Get("#(name=="+bgpPeerName+").name").String(), bgpPeerName + " bgp peer exists on " + routerName)
 
 			}
 		}
-
 
 	})
 	multiRegion.Test()
