@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2019 Takeoff Technologies Inc
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ docker_run:
 		-e SERVICE_ACCOUNT_JSON \
 		-v "$(CURDIR)":/workspace \
 		$(REGISTRY_URL)/${DOCKER_IMAGE_DEVELOPER_TOOLS}:${DOCKER_TAG_VERSION_DEVELOPER_TOOLS} \
-		/bin/bash
+		/bin/bash -i -c 'source /usr/local/bin/task_helper_functions.sh && source_test_env && init_credentials && git config --global --add safe.directory "*"; $$SHELL'
 
 # Execute prepare tests within the docker container
 .PHONY: docker_test_prepare
@@ -71,7 +71,7 @@ docker_test_lint:
 		-e EXCLUDE_LINT_DIRS \
 		-v "$(CURDIR)":/workspace \
 		$(REGISTRY_URL)/${DOCKER_IMAGE_DEVELOPER_TOOLS}:${DOCKER_TAG_VERSION_DEVELOPER_TOOLS} \
-		/usr/local/bin/test_lint.sh
+		/bin/bash -c 'git config --global --add safe.directory "*" && /usr/local/bin/test_lint.sh'
 
 # Generate documentation
 .PHONY: docker_generate_docs

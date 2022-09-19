@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Google LLC
+ * Copyright 2021 Takeoff Technologies Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,27 @@
  * limitations under the License.
  */
 
-output "bucket_name" {
-  value = google_storage_bucket.main.name
+output "mgmt_subnets" {
+  value       = module.sdwan_vpc["mgmt"].subnets
+  description = "A map with keys of form subnet_region/subnet_name and values being the outputs of the google_compute_subnetwork resources used to create corresponding subnets within the mgmt VPC."
+}
+
+output "inet_subnets" {
+  value       = module.sdwan_vpc["inet"].subnets
+  description = "A map with keys of form subnet_region/subnet_name and values being the outputs of the google_compute_subnetwork resources used to create corresponding subnets within the inet VPC."
+}
+
+output "lan_subnets" {
+  value       = module.sdwan_vpc["lan"].subnets
+  description = "A map with keys of form subnet_region/subnet_name and values being the outputs of the google_compute_subnetwork resources used to create corresponding subnets within the lan VPC."
+}
+
+output "lan_self_link" {
+  value       = module.sdwan_vpc["lan"].network_self_link
+  description = "The URI of the lan VPC being created"
+}
+
+output "lan_network_id" {
+  value       = module.sdwan_vpc["lan"].network_id
+  description = "The ID of the lan VPC being created"
 }

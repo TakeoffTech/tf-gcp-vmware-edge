@@ -15,38 +15,27 @@
  */
 
 variable "project_id" {
-  description = "The project ID to deploy to"
+  description = "The ID of the project in which to provision resources."
   type        = string
 }
 
 variable "network_regions" {
   description = "List of regions and subnets to deploy VMware edge appliances"
-  type = set(object(
+  type        = list(map(string))
+  default = [
     {
-      name        = string
-      inet_subnet = string
-      mgmt_subnet = string
-      lan_subnet  = string
-    }
-  ))
-  default = []
-}
-
-variable "cloud_router_asns" {
-  type    = list(number)
-  default = [65120, 65121, 65122, 65123]
-}
-
-variable "vce_asns" {
-  type    = list(number)
-  default = [65220, 65221, 65222, 65223]
-}
-
-variable "vce_machine_type" {
-  description = "GCP machine type for the Velocloud edge instance"
-  type        = string
-  default     = "n2-standard-4"
-
+      name        = "us-central1"
+      inet_subnet = "192.168.20.0/24"
+      mgmt_subnet = "192.168.10.0/24"
+      lan_subnet  = "10.0.10.0/24"
+    },
+    {
+      name        = "us-west2"
+      inet_subnet = "192.168.21.0/24"
+      mgmt_subnet = "192.168.11.0/24"
+      lan_subnet  = "10.0.11.0/24"
+    },
+  ]
 }
 
 variable "velocloud_vco" {
@@ -55,14 +44,8 @@ variable "velocloud_vco" {
 }
 
 variable "velocloud_token" {
-  description = "API token for the Velocloud Orchestrator instance"
+  description = "API Tokken for the Velocloud Orchestrator instance"
   type        = string
-}
-
-variable "velocloud_hub_profile" {
-  description = "Name of a configuration profile to attach to the Veloloud edge instances"
-  type        = string
-  default     = "Hubs-Test"
 }
 
 variable "cloud_router_advertised_ip_ranges" {
@@ -73,5 +56,12 @@ variable "cloud_router_advertised_ip_ranges" {
       description = string
     }
   ))
-  default = []
+  default = [{
+    range       = "10.128.0.0/24"
+    description = "10.128 route"
+    },
+    {
+      range       = "10.254.0.0/16"
+      description = ""
+  }]
 }
