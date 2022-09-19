@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Google LLC
+ * Copyright 2021 Takeoff Technologies Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-variable "project_id" {
-  description = "The ID of the project in which to provision resources."
-  type        = string
-}
+module "sdwan" {
+  source = "../.."
 
-variable "bucket_name" {
-  description = "The name of the bucket to create."
-  type        = string
+  project_id      = var.project_id
+  network_regions = var.network_regions
+
+  velocloud_vco   = var.velocloud_vco
+  velocloud_token = var.velocloud_token
+
+  cloud_router_advertised_ip_ranges = var.cloud_router_advertised_ip_ranges
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Google LLC
+ * Copyright 2021 Takeoff Technologies Inc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 4.0"
-    }
-  }
-  required_version = ">= 0.13"
+output "project_id" {
+  description = "The ID of the project in which to provision resources."
+  value       = var.project_id
+}
+
+output "network_regions" {
+  value = var.network_regions
 }

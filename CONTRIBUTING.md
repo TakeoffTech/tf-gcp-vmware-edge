@@ -98,14 +98,16 @@ noninteractively, using the prepared test project.
 1. Run `make docker_run` to start the testing Docker container in
    interactive mode.
 
-1. Run `kitchen_do create <EXAMPLE_NAME>` to initialize the working
+1. Set `TF_VAR_velocloud_vco` and `TF_VAR_velocloud_token` enviornment variables
+
+1. Run `cft test run <EXAMPLE_NAME> --stage init` to initialize the working
    directory for an example module.
 
-1. Run `kitchen_do converge <EXAMPLE_NAME>` to apply the example module.
+1. Run `cft test run <EXAMPLE_NAME> --stage apply` to apply the example module.
 
-1. Run `kitchen_do verify <EXAMPLE_NAME>` to test the example module.
+1. Run `cft test run <EXAMPLE_NAME> --stage verify` to test the example module.
 
-1. Run `kitchen_do destroy <EXAMPLE_NAME>` to destroy the example module
+1. Run `cft test run <EXAMPLE_NAME> --stage teardown` to destroy the example module
    state.
 
 ### Linting and Formatting
