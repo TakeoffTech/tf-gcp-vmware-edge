@@ -27,7 +27,7 @@ terraform {
   }
 
   provider_meta "takeoff" {
-    module_name = "blueprints/terraform/gcp-vmware-edge/v0.0.1"
+    module_name = "blueprints/terraform/gcp-vmware-edge/v0.1.0"
   }
 }
 
