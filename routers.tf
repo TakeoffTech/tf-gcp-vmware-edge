@@ -35,6 +35,11 @@ resource "google_compute_router" "lan_router" {
   }
 }
 
+# get GOOGLE_APPLICATION_CREDENTIALS for below commands
+data "external" "env" {
+  program = ["${path.module}/scripts/env.sh"]
+}
+
 # need to use gcloud command to create nics since it's not supported by the provider
 # feature request here: https://github.com/hashicorp/terraform-provider-google/issues/11206
 module "router_nics" {
@@ -44,8 +49,10 @@ module "router_nics" {
 
   platform = "linux"
 
-  create_cmd_entrypoint = "${path.module}/scripts/gcloud_scripts.sh"
-  create_cmd_body       = "add_router_nics sdwan-router-${each.value.name} ${cidrhost(each.value.lan_subnet, 10)} lan-vpc-subnet-${each.value.name} ${each.value.name} ${var.project_id}"
+  service_account_key_file = data.external.env.result["google_application_credentials"]
+
+  create_cmd_entrypoint  = "${path.module}/scripts/gcloud_scripts.sh"
+  create_cmd_body        = "add_router_nics sdwan-router-${each.value.name} ${cidrhost(each.value.lan_subnet, 10)} lan-vpc-subnet-${each.value.name} ${each.value.name} ${var.project_id}"
 
   depends_on = [
     google_compute_router.lan_router["*"],
@@ -61,6 +68,7 @@ module "bgp_peers" {
 
   platform = "linux"
 
+  service_account_key_file = data.external.env.result["google_application_credentials"]
 
   create_cmd_entrypoint = "${path.module}/scripts/gcloud_scripts.sh"
   create_cmd_body       = "add-bgp-peers sdwan-router-${each.value.name} ${cidrhost(each.value.lan_subnet, 2)} ${var.vce_asns[index(local.regions, each.value.name)]} ${google_compute_instance.dm_gcp_vce[each.value.name].self_link} ${each.value.name} ${var.project_id}"
